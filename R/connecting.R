@@ -412,6 +412,7 @@ stopJulia <- function() {
       pkgLocal$con <- NULL
       pkgLocal$port <- NULL
       pkgLocal$communicator <- NULL
+      pkgLocal$previousSessionEnd <- "stopped"
 
       # clean up references
       invisible(gc(verbose = FALSE))
@@ -422,6 +423,7 @@ stopJulia <- function() {
 
 ensureJuliaConnection <- function() {
    if (is.null(pkgLocal$con)) {
+      announceRestart()
       startJulia()
 
       # make sure that Tables.jl is available
@@ -441,11 +443,30 @@ ensureJuliaConnection <- function() {
 }
 
 
+# Announce that the Julia session about to be started replaces an earlier
+# one, so that stale definitions and object references do not fail silently
+# and mysteriously later. A restart after a deliberate stopJulia() only
+# gives a message; a restart after the process was killed (e.g. by the
+# interrupt handler) gives a warning.
+announceRestart <- function() {
+   sessionLossInfo <- paste("All definitions and object references",
+                            "from the previous Julia session are no longer valid.")
+   if (identical(pkgLocal$previousSessionEnd, "killed")) {
+      warning("Restarting Julia after the last session was terminated. ",
+              sessionLossInfo, call. = FALSE, immediate. = TRUE)
+   } else if (identical(pkgLocal$previousSessionEnd, "stopped")) {
+      message("Starting a new Julia session. ", sessionLossInfo)
+   }
+   pkgLocal$previousSessionEnd <- NULL
+}
+
+
 killJulia <- function() {
    os <- Sys.info()['sysname']
    juliaPort <- pkgLocal$port
    message("Stopping Julia ...")
    stopJulia()
+   pkgLocal$previousSessionEnd <- "killed"
    if (os == "Windows") {
       juliaPid <- killJuliaWindows(juliaPort)
    } else {

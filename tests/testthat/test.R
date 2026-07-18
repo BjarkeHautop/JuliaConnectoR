@@ -1955,3 +1955,16 @@ test_that("Boltzmann example from README works", {
    eval(parse(text = code), envir = bmScriptEnv)
    expect_s3_class(bmScriptEnv$dbm, "JuliaProxy")
 })
+
+
+
+test_that("Restarting Julia announces the loss of the previous session", {
+   invisible(juliaEval("1"))
+
+   stopJulia()
+   expect_message(juliaEval("1 + 1"), "previous Julia session")
+
+   invisible(juliaEval("1"))
+   JuliaConnectoR:::killJulia()
+   expect_warning(juliaEval("1 + 1"), "previous Julia session")
+})
