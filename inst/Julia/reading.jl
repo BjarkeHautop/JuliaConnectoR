@@ -3,8 +3,10 @@ struct Fail
 end
 
 function Fail(msg, origex, origex_backtrace)
+   # invokelatest: rendering the backtrace may access bindings that were
+   # defined after the server loop's world age (Julia 1.12 warns otherwise)
    Fail(msg * "\nOriginal Julia error message:\n" *
-         sprint(showerror, origex, origex_backtrace))
+         Base.invokelatest(sprint, showerror, origex, origex_backtrace))
 end
 
 
