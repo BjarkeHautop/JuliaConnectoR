@@ -20,6 +20,11 @@ test_that("Some smoke tests", {
    )
 })
 
+test_that("Pass character(0) works ", {
+   f <- juliaEval("x -> length(x)")
+   expect_equal(f(character(0)), 0)
+})
+
 test_that("No Revise message", {
    juliaEval('boom() = error("kaboom")')
    output <- try(juliaCall("boom"))
